@@ -1,0 +1,144 @@
+#!/usr/bin/python3
+import subprocess
+import tarfile
+import os
+from datetime import datetime
+from os.path import expanduser, join
+from argparse import ArgumentParser
+
+def now():
+    return datetime.now().strftime('%Y-%b-%d_%H-%M')
+
+def enum_vim_config_files():
+    return [join(expanduser('~'), '.vimrc'), join(expanduser('~'), '.vim')]
+
+def at_least_one_exists(files):
+    return reduce(lambda a, b: a or b, map(lambda f: os.path.exists(f), files))
+
+def backup_dir():
+    return join(expanduser('~'), '.vim-jk', 'backups')
+
+def backup_filename(date = now()):
+    return join(backup_dir(), 'backup-{}.tar.gz'.format(date))
+
+def save_current_config(filename = backup_filename()):
+    if not os.path.exists(backup_dir()):
+        os.makedirs(backup_dir())
+    with tarfile.open(filename, 'w:gz') as f:
+        print('New backup: {}'.format(filename))
+        for cf in enum_vim_config_files():
+            if os.path.exists(cf):
+                print('Adding: {}'.format(cf))
+                f.add(cf)
+        f.close()
+
+def clean_config():
+    print('Deleting existing configuration ...')
+    for cf in enum_vim_config_files():
+        subprocess.run(['rm', '-rf', cf])
+
+def restore_config(filename):
+    print('Restoring vim configuration in {} ...'.format(filename))
+    with tarfile.open(filename, 'r:gz') as f:
+        savelast = join(backup_dir(), 'last-known-config.tar.gz')
+        if os.path.exists(savelast) and at_least_one_exists(enum_vim_config_files):
+            os.remove(savelast)
+        print('Making backup copy of existing configuration ...')
+        save_current_config(savelast)
+        clean_config()
+        print('Extracting from {} ...'.format(filename))
+        f.extractall(os.sep)
+
+def git_clone(url, destination, options = ''):
+    subprocess.run('git clone {} {} {}'.format(options, url, destination), shell=True)
+
+def vim_helptags(helptags):
+    subprocess.run('vim -u NONE -c "helptags {}" -c q'.format(helptags), shell=True)
+
+def vim_addtorc(lines):
+    with open(join(expanduser('~'), '.vimrc'), 'a+') as rc:
+        rc.writelines(map(lambda l: '{}{}'.format(l, os.linesep), lines))
+        rc.close()
+
+def install_vim_sensible():
+    dest = join(expanduser('~'), '.vim', 'pack', 'dist', 'start', 'sensible')
+    if os.path.exists(dest):
+        print('vim-sensible already installed, skipping')
+    else:
+        git_clone('https://tpope.io/vim/sensible.git', dest)
+        vim_helptags(join(dest, 'doc'))
+
+def install_vim_ctrlp():
+    dest = join(expanduser('~'), '.vim', 'bundle', 'ctrlp.vim')
+    if os.path.exists(dest):
+        print('vim-ctrlp already installed, skipping')
+    else:
+        git_clone('https://github.com/ctrlpvim/ctrlp.vim.git', dest)
+        vim_addtorc(['set runtimepath^=~/.vim/bundle/ctrlp.vim'])
+        vim_helptags(join(dest, 'doc'))
+
+def install_vim_airline():
+    dest = join(expanduser('~'), '.vim', 'pack', 'dist', 'start', 'vim-airline')
+    if os.path.exists(dest):
+        print('vim-airline already installed, skipping')
+    else:
+        git_clone('https://github.com/vim-airline/vim-airline', dest)
+        vim_helptags(join(dest, 'doc'))
+    dest = join(expanduser('~'), '.vim', 'pack', 'dist', 'start', 'vim-airline-themes')
+    if os.path.exists(dest):
+        print('vim-airline-themes already installed, skipping')
+    else:
+        git_clone('https://github.com/vim-airline/vim-airline-themes', dest)
+        vim_addtorc(['let g:airline_powerline_fonts = 1'])
+
+def install_vim_tagbar():
+    dest = join(expanduser('~'), '.vim', 'pack', 'dist', 'start', 'vim-tagbar')
+    if os.path.exists(dest):
+        print('vim-tagbar already installed, skipping')
+    else:
+        git_clone('https://github.com/majutsushi/tagbar.git', dest)
+        vim_addtorc(['nmap <F8> :TagbarToggle<CR>'])
+        vim_helptags(join(dest, 'doc'))
+
+def install_vim_powerline_fonts():
+    dest = join(expanduser('~'), '.vim', 'powerline', 'fonts')
+    if os.path.exists(dest):
+        print('vim-powerline-fonts already installed, skipping')
+    else:
+        git_clone('https://github.com/powerline/fonts.git', dest, options = '--depth 1')
+        subprocess.run('cd {} && ./install.sh'.format(dest), shell=True)
+
+def install_vim_youcompleteme():
+    dest = join(expanduser('~'), '.vim', 'bundle', 'youcompleteme')
+    if os.path.exists(dest):
+        print('vim-youcompleteme already installed, skipping')
+    elif input('Do you want to install YouCompleteMe [y/N]? ') is 'y':
+        git_clone('https://github.com/Valloric/YouCompleteMe.git', dest)
+        subprocess.run('cd {} && git submodule update --init --recursive'.format(dest), shell=True)
+        subprocess.run('cd {} && ./install.py --clang-completer'.format(dest), shell=True)
+        vim_addtorc(['set runtimepath^={}'.format(dest)])
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('-s', '--save', help='Backup all vim configuration files', action='store_true', dest='s')
+    parser.add_argument('-r', '--restore', help='Restore configuration in FILE.', metavar='FILE', dest='r')
+    parser.add_argument('-c', '--clean', help='Remove all vim configuration files', action='store_true', dest='c')
+    return parser.parse_args()
+
+args = parse_args()
+if args.s:
+    save_current_config()
+if args.r:
+    restore_config(args.r)
+elif args.c:
+    if input("Are you sure you want to delete all vim configuration files [y/N]? ") is 'y':
+        clean_config()
+else:
+    install_vim_sensible()
+    install_vim_ctrlp()
+    install_vim_airline()
+    install_vim_tagbar()
+    install_vim_powerline_fonts()
+    install_vim_youcompleteme()
+    vim_addtorc(['set number'])
+    vim_addtorc(['set tags=tags;/'])
