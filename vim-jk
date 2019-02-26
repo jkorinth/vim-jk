@@ -142,3 +142,4 @@ else:
     install_vim_youcompleteme()
     vim_addtorc(['set number'])
     vim_addtorc(['set tags=tags;/'])
+    vim_addtorc(['colorscheme torte'])
