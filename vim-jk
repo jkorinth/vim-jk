@@ -143,3 +143,7 @@ else:
     vim_addtorc(['set number'])
     vim_addtorc(['set tags=tags;/'])
     vim_addtorc(['colorscheme torte'])
+    vim_addtorc(['filetype plugin on'])
+    vim_addtorc(['autocmd FileType plaintex setlocal ts=2 sw=2 ai'])
+    vim_addtorc(['autocmd FileType tex setlocal ts=2 sw=2 ai'])
+    vim_addtorc(['autocmd FileType latex setlocal ts=2 sw=2 ai'])
