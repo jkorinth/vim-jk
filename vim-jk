@@ -118,6 +118,15 @@ def install_vim_youcompleteme():
         subprocess.run('cd {} && ./install.py --clang-completer'.format(dest), shell=True)
         vim_addtorc(['set runtimepath^={}'.format(dest)])
 
+def install_vim_tabular():
+    dest = join(expanduser('~'), '.vim', 'bundle', 'tabular')
+    if os.path.exists(dest):
+        print('vim-tabular already installed, skipping')
+    else:
+        git_clone('git://github.com/godlygeek/tabular.git', dest)
+        vim_addtorc(['set runtimepath^={}'.format(dest)])
+        vim_helptags(join(dest, 'doc'))
+
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('-s', '--save', help='Backup all vim configuration files', action='store_true', dest='s')
@@ -140,6 +149,7 @@ else:
     install_vim_tagbar()
     install_vim_powerline_fonts()
     install_vim_youcompleteme()
+    install_vim_tabular()
     vim_addtorc(['set number'])
     vim_addtorc(['set tags=tags;/'])
     vim_addtorc(['colorscheme torte'])
