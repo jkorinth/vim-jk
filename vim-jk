@@ -116,7 +116,7 @@ def install_vim_youcompleteme(quiet):
     elif quiet or input('Do you want to install YouCompleteMe [y/N]? ') is 'y':
         git_clone('https://github.com/Valloric/YouCompleteMe.git', dest)
         subprocess.run('cd {} && git submodule update --init --recursive'.format(dest), shell=True)
-        subprocess.run('cd {} && ./install.py --clang-completer'.format(dest), shell=True)
+        subprocess.run('cd {} && /usr/bin/env python3 ./install.py --clang-completer --quiet'.format(dest), shell=True)
         vim_addtorc(['set runtimepath^={}'.format(dest)])
 
 def install_vim_tabular():
@@ -154,6 +154,9 @@ else:
     install_vim_tabular()
     vim_addtorc(['set number'])
     vim_addtorc(['set tags=tags;/'])
+    vim_addtorc(['set exrc'])
+    vim_addtorc(['set hlsearch'])
+    vim_addtorc(['set incsearch'])
     vim_addtorc(['colorscheme torte'])
     vim_addtorc(['filetype plugin on'])
     vim_addtorc(['autocmd FileType plaintex setlocal ts=2 sw=2 ai'])
