@@ -118,6 +118,7 @@ def install_vim_youcompleteme(quiet):
         subprocess.run('cd {} && git submodule update --init --recursive'.format(dest), shell=True)
         subprocess.run('cd {} && /usr/bin/env python3 ./install.py --clang-completer --quiet'.format(dest), shell=True)
         vim_addtorc(['set runtimepath^={}'.format(dest)])
+        subprocess.run('reset', shell=True)
 
 def install_vim_tabular():
     dest = join(expanduser('~'), '.vim', 'bundle', 'tabular')
