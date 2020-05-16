@@ -58,8 +58,8 @@ def vim_helptags(helptags):
     subprocess.run('vim -u NONE -c "helptags {}" -c q'.format(helptags), shell=True)
 
 def vim_addtorc(lines):
-    with open(join(expanduser('~'), '.vimrc'), 'a+') as rc:
-        rc.writelines(map(lambda l: '{}{}'.format(l, os.linesep), lines))
+    with open(join(expanduser('~'), '.vimrc'), 'a+', newline='') as rc:
+        rc.write(os.linesep.join(lines) + os.linesep)
         rc.close()
 
 def install_vim_sensible():
@@ -113,7 +113,7 @@ def install_vim_youcompleteme(quiet):
     dest = join(expanduser('~'), '.vim', 'bundle', 'youcompleteme')
     if os.path.exists(dest):
         print('vim-youcompleteme already installed, skipping')
-    elif quiet or input('Do you want to install YouCompleteMe [y/N]? ') is 'y':
+    elif quiet or input('Do you want to install YouCompleteMe [y/N]? ') == 'y':
         git_clone('https://github.com/Valloric/YouCompleteMe.git', dest)
         subprocess.run('cd {} && git submodule update --init --recursive'.format(dest), shell=True)
         subprocess.run('cd {} && /usr/bin/env python3 ./install.py --clang-completer --quiet'.format(dest), shell=True)
@@ -127,6 +127,23 @@ def install_vim_tabular():
     else:
         git_clone('git://github.com/godlygeek/tabular.git', dest)
         vim_addtorc(['set runtimepath^={}'.format(dest)])
+        vim_helptags(join(dest, 'doc'))
+
+def install_vim_vundle():
+    dest = join(expanduser('~'), '.vim', 'bundle', 'Vundle.vim')
+    if os.path.exists(dest):
+        print('vim-vundle already installed, skipping')
+    else:
+        git_clone('https://github.com/VundleVim/Vundle.vim.git', dest)
+        vim_addtorc([
+            'set nocompatible',
+            'filetype off',
+            'set rtp+=~/.vim/bundle/Vundle.vim',
+            'call vundle#begin()',
+            "Plugin 'VundleVim/Vundle.vim'",
+            'call vundle#end()',
+            'filetype plugin indent on'
+        ])
         vim_helptags(join(dest, 'doc'))
 
 def parse_args():
@@ -143,9 +160,10 @@ if args.s:
 if args.r:
     restore_config(args.r)
 elif args.c:
-    if args.q or input("Are you sure you want to delete all vim configuration files [y/N]? ") is 'y':
+    if args.q or input("Are you sure you want to delete all vim configuration files [y/N]? ") == 'y':
         clean_config()
 else:
+    install_vim_vundle()
     install_vim_sensible()
     install_vim_ctrlp()
     install_vim_airline()
@@ -153,6 +171,10 @@ else:
     install_vim_powerline_fonts()
     install_vim_youcompleteme(args.q)
     install_vim_tabular()
+    vim_addtorc(['set encoding=utf-8'])
+    vim_addtorc(['set packpath+=~/.vim'])
+    vim_addtorc(['set backspace=indent,eol,start'])
+    vim_addtorc(['syntax on'])
     vim_addtorc(['set number'])
     vim_addtorc(['set tags=tags;/'])
     vim_addtorc(['set exrc'])
@@ -163,3 +185,4 @@ else:
     vim_addtorc(['autocmd FileType plaintex setlocal ts=2 sw=2 ai'])
     vim_addtorc(['autocmd FileType tex setlocal ts=2 sw=2 ai'])
     vim_addtorc(['autocmd FileType latex setlocal ts=2 sw=2 ai'])
+    vim_addtorc(['autocmd FileType python setlocal ts=4 sw=4 et ai'])
