@@ -186,3 +186,5 @@ else:
     vim_addtorc(['autocmd FileType tex setlocal ts=2 sw=2 ai'])
     vim_addtorc(['autocmd FileType latex setlocal ts=2 sw=2 ai'])
     vim_addtorc(['autocmd FileType python setlocal ts=4 sw=4 et ai'])
+    vim_addtorc(['let g:ctrlp_max_files=0'])
+    vim_addtorc(['let g:ctrlp_max_depth=50'])
